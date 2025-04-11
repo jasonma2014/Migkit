@@ -3,3 +3,4 @@ sqlalchemy
 pymysql
 psycopg2
 pyyaml
+pytest>=7.0.0

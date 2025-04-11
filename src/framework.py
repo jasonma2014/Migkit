@@ -31,9 +31,18 @@ class DataMigrationFramework:
     def run(self):
         # Execute phases in predefined order: Extract -> Transform -> Load
         predefined_order = [Phase.EXTRACT.value, Phase.TRANSFORM.value, Phase.LOAD.value]
+        data = None
+        
         for phase_name in predefined_order:
             if phase_name in self.phases:
                 print(f"Running phase: {phase_name}...")
-                self.phases[phase_name]()
+                if data is None:
+                    # For Extract phase, no input data is needed
+                    data = self.phases[phase_name]()
+                else:
+                    # For Transform and Load phases, pass the data from previous phase
+                    data = self.phases[phase_name](data)
             else:
                 raise ValueError(f"Phase '{phase_name}' is not registered!")
+        
+        return data
