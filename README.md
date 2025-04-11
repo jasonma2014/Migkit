@@ -3,6 +3,18 @@
 ## Overview
 Migkit is a data migration tool designed to facilitate the transfer of data from a source database to a target database. It uses SQLAlchemy for database connections and Pandas for data manipulation.
 
+## Project Structure
+```
+migkit/
+├── src/
+│   ├── config.py           # Configuration management
+│   ├── data_migration.py   # Core migration logic
+│   ├── framework.py        # Migration framework
+│   └── run_migration.py    # Entry point
+├── requirements.txt        # Project dependencies
+└── README.md              # Project documentation
+```
+
 ## Features
 - **Data Extraction**: Fetch data from the source database.
 - **Data Transformation**: Transform data using Pandas.
@@ -31,8 +43,8 @@ target_db_uri: "postgresql+psycopg2://user:password@localhost/target_db"
 
 ### 2. Simple Data Migration
 ```python
-from data_migration import fetch_data_from_source, transform_data_with_pandas, save_data_to_target
-from framework import Phase
+from src.data_migration import fetch_data_from_source, transform_data_with_pandas, save_data_to_target
+from src.framework import Phase
 
 # Execute data migration
 data = fetch_data_from_source()
@@ -42,8 +54,8 @@ save_data_to_target(transformed_data)
 
 ### 3. Custom Transformation Example
 ```python
-from data_migration import fetch_data_from_source, save_data_to_target
-from framework import phase, Phase
+from src.data_migration import fetch_data_from_source, save_data_to_target
+from src.framework import phase, Phase
 
 @phase(Phase.TRANSFORM)
 def custom_transform(data):
@@ -61,10 +73,10 @@ save_data_to_target(transformed_data)
 ### 4. Running the Migration
 ```bash
 # Using default profile (dev)
-python run_migration.py
+python src/run_migration.py
 
 # Using specific profile
-PROFILE=prod python run_migration.py
+PROFILE=prod python src/run_migration.py
 ```
 
 ## Configuration Guide
