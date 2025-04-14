@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field, validator, root_validator, conlist, constr, confloat
+import re
+from pydantic import BaseModel, Field, validator, root_validator, field_validator, model_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 import pandas as pd
@@ -13,22 +14,21 @@ class SourceRecord(BaseModel):
     column3: Optional[float] = Field(None, description="Column3 should be a numeric value")
     created_at: Optional[datetime] = None
     
-    @validator('column1')
+    @field_validator('column1')
     def column1_must_not_contain_special_chars(cls, v):
         """Validate that column1 doesn't contain special characters"""
-        import re
         if re.search(r'[!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?/~`]', v):
             raise ValueError("column1 should not contain special characters")
         return v
     
-    @validator('column3')
+    @field_validator('column3')
     def column3_must_be_in_range(cls, v):
         """Validate that column3 is within acceptable range"""
         if v is not None and (v < 0 or v > 1000):
             raise ValueError("column3 must be between 0 and 1000")
         return v
     
-    @root_validator
+    @model_validator(mode='after')
     def check_created_at_not_future(cls, values):
         """Validate that created_at is not in the future"""
         created_at = values.get('created_at')
@@ -42,7 +42,7 @@ class SourceDetailRecord(BaseModel):
     source_id: int = Field(..., gt=0, description="Source ID must be positive")
     detail_data: Optional[str] = Field(None, max_length=500, description="Detail data")
     
-    @validator('detail_data')
+    @field_validator('detail_data')
     def detail_data_must_be_valid_format(cls, v):
         """Validate that detail_data has a valid format if present"""
         if v and not v.strip():
@@ -61,7 +61,7 @@ class SourceDataset(BaseModel):
             raise ValueError("Dataset must contain at least one record")
         return v
     
-    @root_validator
+    @model_validator(mode='after')
     def check_detail_references(cls, values):
         """Validate that all detail records reference existing source records"""
         records = values.get('records', [])
