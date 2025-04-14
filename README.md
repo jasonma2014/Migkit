@@ -1,94 +1,71 @@
-# Migkit Data Migration Tool
+# Migkit - Data Migration Toolkit
 
-## Overview
-Migkit is a data migration tool designed to facilitate the transfer of data from a source database to a target database. It uses SQLAlchemy for database connections and Pandas for data manipulation.
-
-## Project Structure
-```
-migkit/
-├── src/
-│   ├── config.py           # Configuration management
-│   ├── data_migration.py   # Core migration logic
-│   ├── framework.py        # Migration framework
-│   └── run_migration.py    # Entry point
-├── requirements.txt        # Project dependencies
-└── README.md              # Project documentation
-```
+A powerful Python-based toolkit for ETL (Extract, Transform, Load) operations using SQLAlchemy 2.0 and Pandas.
 
 ## Features
-- **Data Extraction**: Fetch data from the source database.
-- **Data Transformation**: Transform data using Pandas.
-- **Data Loading**: Load transformed data into the target database.
 
-## Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-repo/migkit.git
-   cd migkit
-   ```
+- Modern SQLAlchemy 2.0 ORM with type hints
+- Advanced Pandas data processing capabilities
+- Flexible ETL framework with phase annotations
+- Support for both SQL and ORM-based operations
+- Relationship handling between source and target models
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Project Structure
 
-## Usage Examples
+```
+├── src/
+│   ├── config.py          # Configuration settings
+│   ├── framework.py       # ETL framework with phase system
+│   ├── models.py          # SQLAlchemy 2.0 models
+│   └── data_migration.py  # ETL implementation
+├── application-dev.yml    # Development configuration
+└── README.md              # This file
+```
 
-### 1. Basic Configuration
-Create a configuration file `application-dev.yml`:
+## Requirements
+
+- Python 3.10+
+- SQLAlchemy 2.0+
+- Pandas
+- PyYAML
+
+## Configuration
+
+Edit the `application-dev.yml` file to configure database connections:
+
 ```yaml
 source_db_uri: "mysql+pymysql://user:password@localhost/source_db"
 target_db_uri: "postgresql+psycopg2://user:password@localhost/target_db"
 ```
 
-### 2. Simple Data Migration
-```python
-from src.data_migration import fetch_data_from_source, transform_data_with_pandas, save_data_to_target
-from src.framework import Phase
+You can set the `PROFILE` environment variable to choose different configuration files:
 
-# Execute data migration
-data = fetch_data_from_source()
-transformed_data = transform_data_with_pandas(data)
-save_data_to_target(transformed_data)
-```
-
-### 3. Custom Transformation Example
-```python
-from src.data_migration import fetch_data_from_source, save_data_to_target
-from src.framework import phase, Phase
-
-@phase(Phase.TRANSFORM)
-def custom_transform(data):
-    # Example: Calculate average of numeric columns
-    numeric_columns = data.select_dtypes(include=['int64', 'float64']).columns
-    data['average'] = data[numeric_columns].mean(axis=1)
-    return data
-
-# Usage
-data = fetch_data_from_source()
-transformed_data = custom_transform(data)
-save_data_to_target(transformed_data)
-```
-
-### 4. Running the Migration
 ```bash
-# Using default profile (dev)
-python src/run_migration.py
-
-# Using specific profile
-PROFILE=prod python src/run_migration.py
+export PROFILE=production  # Will use application-production.yml
 ```
 
-## Configuration Guide
-- Use `PROFILE` environment variable to specify configuration file (default: `dev`)
-- Supported configuration file format: `application-{profile}.yml`
-- Database URI formats:
-  - MySQL: `mysql+pymysql://user:password@host:port/database`
-  - PostgreSQL: `postgresql+psycopg2://user:password@host:port/database`
+## Usage
 
-## Best Practices
-1. Always use environment variables for sensitive information
-2. Implement proper error handling in transformation functions
-3. Use appropriate batch sizes for large datasets
-4. Test migrations with a subset of data first
-5. Keep transformation logic modular and reusable
+To run a migration process:
+
+```bash
+python -m src.data_migration
+```
+
+## ETL Process
+
+1. **Extract**: Fetches data from source database using both raw SQL and ORM
+2. **Transform**: Processes data with advanced Pandas operations
+3. **Load**: Saves transformed data to target database
+
+## Extending
+
+To create new migration processes:
+
+1. Define new models in `models.py`
+2. Create functions with `@phase` decorators in your migration file
+3. Run the migration with the framework
+
+## License
+
+MIT

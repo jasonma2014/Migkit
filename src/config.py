@@ -1,6 +1,7 @@
 import os  # Explicitly import os
 import yaml  # Explicitly import yaml
 
+
 class Config:
     def __init__(self):
         # Get environment variable PROFILE, default to 'dev'
@@ -16,8 +17,13 @@ class Config:
             config_data = yaml.safe_load(file)
 
         # Database connection configuration
-        self.SOURCE_DB_URI = config_data.get("source_db_uri", "mysql+pymysql://user:password@localhost/source_db")
-        self.TARGET_DB_URI = config_data.get("target_db_uri", "postgresql+psycopg2://user:password@localhost/target_db")
+        self.SOURCE_DB_URI = config_data.get(
+            "source_db_uri", "mysql+pymysql://user:password@localhost/source_db"
+        )
+        self.TARGET_DB_URI = config_data.get(
+            "target_db_uri", "postgresql+psycopg2://user:password@localhost/target_db"
+        )
+
 
 # Instantiate the configuration object
 config = Config()

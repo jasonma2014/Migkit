@@ -1,6 +1,7 @@
 pandas
-sqlalchemy
+sqlalchemy>=2.0.0
 pymysql
 psycopg2
 pyyaml
 pytest>=7.0.0
+pydantic>=2.0.0

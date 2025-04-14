@@ -1,0 +1,16 @@
+# Development environment configuration
+
+# Database connection URIs
+source_db_uri: "mysql+pymysql://user:password@localhost/source_db"
+target_db_uri: "postgresql+psycopg2://user:password@localhost/target_db"
+
+# Optional settings
+batch_size: 1000
+log_level: "DEBUG"
+enable_detailed_logging: true
+
+# Feature flags
+features:
+  parallel_processing: false
+  data_validation: true
+  incremental_loading: false 
