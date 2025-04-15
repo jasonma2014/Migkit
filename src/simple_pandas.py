@@ -7,13 +7,20 @@ for data processing without relying on SQLAlchemy or Pydantic.
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 import os
 from datetime import datetime, timedelta
 from framework import phase, Phase, DataMigrationFramework
 
 # Ensure output directories exist
 os.makedirs("output", exist_ok=True)
-os.makedirs("output/charts", exist_ok=True)
+os.makedirs("output/data", exist_ok=True)
+os.makedirs("output/visualizations", exist_ok=True)
+
+# Set seaborn style for better visualizations
+sns.set(style="whitegrid")
+plt.rcParams['figure.figsize'] = (12, 8)
+plt.rcParams['font.size'] = 12
 
 
 @phase(Phase.EXTRACT)
@@ -110,9 +117,9 @@ def extract_data_to_pandas():
     customer_segment_data = pd.DataFrame(customer_data)
     
     # Save raw data as CSV files
-    daily_sales_data.to_csv("output/daily_sales_raw.csv", index=False)
-    product_sales_data.to_csv("output/product_sales_raw.csv", index=False)
-    customer_segment_data.to_csv("output/customer_segment_raw.csv", index=False)
+    daily_sales_data.to_csv("output/data/daily_sales_raw.csv", index=False)
+    product_sales_data.to_csv("output/data/product_sales_raw.csv", index=False)
+    customer_segment_data.to_csv("output/data/customer_segment_raw.csv", index=False)
     
     # Return all DataFrames in a dictionary
     return {
@@ -239,7 +246,7 @@ def transform_with_pandas(data_frames):
 @phase(Phase.LOAD)
 def load_results_and_visualize(transformed_data):
     """
-    Load phase: Save processed data and create visualizations.
+    Load phase: Save processed data and create visualizations with seaborn.
     
     Args:
         transformed_data (dict): Dictionary with transformed data
@@ -247,26 +254,60 @@ def load_results_and_visualize(transformed_data):
     Returns:
         dict: Summary of the operation
     """
-    print("Loading results and creating visualizations...")
+    print("Loading results and creating visualizations with seaborn...")
     
     # Save all transformed DataFrames to CSV
     for name, df in transformed_data.items():
         if isinstance(df, pd.DataFrame):
-            df.to_csv(f"output/{name}.csv")
+            df.to_csv(f"output/data/{name}.csv")
     
-    # Create visualizations
+    # Create a summary report
+    total_revenue = transformed_data['daily_sales']['revenue'].sum()
+    total_transactions = int(transformed_data['daily_sales']['transactions'].sum())
+    avg_transaction = total_revenue / total_transactions
+    overall_roi = ((total_revenue - transformed_data['daily_sales']['advertising_spend'].sum()) / 
+                   transformed_data['daily_sales']['advertising_spend'].sum() * 100)
+    
+    # Get top product
+    top_product = transformed_data['product_summary'].iloc[0]['product']
+    top_product_sales = transformed_data['product_summary'].iloc[0]['total_sales']
+    
+    # Create a summary report as a DataFrame
+    summary_data = {
+        'Metric': [
+            'Total Revenue',
+            'Total Transactions',
+            'Average Transaction Value',
+            'Overall ROI',
+            'Top Product',
+            'Top Product Sales'
+        ],
+        'Value': [
+            f"${total_revenue:.2f}",
+            f"{total_transactions:,}",
+            f"${avg_transaction:.2f}",
+            f"{overall_roi:.2f}%",
+            top_product,
+            f"${top_product_sales:.2f}"
+        ]
+    }
+    
+    summary_df = pd.DataFrame(summary_data)
+    summary_df.to_csv("output/data/summary_report.csv", index=False)
+    
+    # Create visualizations with seaborn
     visualizations = []
     
     # 1. Daily Revenue Trend
     plt.figure(figsize=(12, 6))
-    plt.plot(transformed_data['daily_sales']['date'], transformed_data['daily_sales']['revenue'], label='Daily Revenue')
-    plt.plot(transformed_data['daily_sales']['date'], transformed_data['daily_sales']['revenue_7d_ma'], label='7-Day Moving Average')
-    plt.title('Daily Revenue Trend')
-    plt.xlabel('Date')
-    plt.ylabel('Revenue ($)')
-    plt.legend()
+    sns.lineplot(x='date', y='revenue', data=transformed_data['daily_sales'], label='Daily Revenue')
+    sns.lineplot(x='date', y='revenue_7d_ma', data=transformed_data['daily_sales'], label='7-Day Moving Average')
+    plt.title('Daily Revenue Trend', fontsize=16)
+    plt.xlabel('Date', fontsize=14)
+    plt.ylabel('Revenue ($)', fontsize=14)
+    plt.legend(fontsize=12)
     plt.tight_layout()
-    plt.savefig('output/charts/daily_revenue_trend.png')
+    plt.savefig('output/visualizations/daily_revenue_trend.png', dpi=300)
     visualizations.append('daily_revenue_trend.png')
     plt.close()
     
@@ -274,235 +315,95 @@ def load_results_and_visualize(transformed_data):
     plt.figure(figsize=(10, 6))
     day_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     day_data = transformed_data['day_of_week_analysis'].set_index('day_of_week').reindex(day_order)
-    day_data['revenue'].plot(kind='bar', color='skyblue')
-    plt.title('Average Revenue by Day of Week')
-    plt.xlabel('Day of Week')
-    plt.ylabel('Average Revenue ($)')
+    sns.barplot(x=day_data.index, y='revenue', data=day_data, palette='viridis')
+    plt.title('Average Revenue by Day of Week', fontsize=16)
+    plt.xlabel('Day of Week', fontsize=14)
+    plt.ylabel('Average Revenue ($)', fontsize=14)
     plt.tight_layout()
-    plt.savefig('output/charts/revenue_by_day.png')
+    plt.savefig('output/visualizations/revenue_by_day.png', dpi=300)
     visualizations.append('revenue_by_day.png')
     plt.close()
     
     # 3. Product Sales Distribution
     plt.figure(figsize=(10, 6))
-    plt.pie(
-        transformed_data['product_summary']['total_sales'],
-        labels=transformed_data['product_summary']['product'],
-        autopct='%1.1f%%',
-        startangle=90
-    )
-    plt.axis('equal')
-    plt.title('Product Sales Distribution')
+    sns.barplot(x='product', y='total_sales', data=transformed_data['product_summary'], palette='viridis')
+    plt.title('Total Sales by Product', fontsize=16)
+    plt.xlabel('Product', fontsize=14)
+    plt.ylabel('Total Sales ($)', fontsize=14)
+    plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig('output/charts/product_sales_pie.png')
-    visualizations.append('product_sales_pie.png')
+    plt.savefig('output/visualizations/product_sales.png', dpi=300)
+    visualizations.append('product_sales.png')
     plt.close()
     
     # 4. Category Comparison
     plt.figure(figsize=(8, 5))
-    plt.bar(
-        transformed_data['category_summary']['category'],
-        transformed_data['category_summary']['total_sales']
-    )
-    plt.title('Sales by Product Category')
-    plt.xlabel('Category')
-    plt.ylabel('Total Sales ($)')
+    sns.barplot(x='category', y='total_sales', data=transformed_data['category_summary'], palette='viridis')
+    plt.title('Sales by Product Category', fontsize=16)
+    plt.xlabel('Category', fontsize=14)
+    plt.ylabel('Total Sales ($)', fontsize=14)
     plt.tight_layout()
-    plt.savefig('output/charts/category_sales.png')
+    plt.savefig('output/visualizations/category_sales.png', dpi=300)
     visualizations.append('category_sales.png')
     plt.close()
     
     # 5. Customer Segment Value
     plt.figure(figsize=(8, 5))
-    plt.bar(
-        transformed_data['segment_summary']['segment'],
-        transformed_data['segment_summary']['total_value']
-    )
-    plt.title('Total Value by Customer Segment')
-    plt.xlabel('Customer Segment')
-    plt.ylabel('Total Value ($)')
+    sns.barplot(x='segment', y='total_value', data=transformed_data['segment_summary'], palette='viridis')
+    plt.title('Total Value by Customer Segment', fontsize=16)
+    plt.xlabel('Customer Segment', fontsize=14)
+    plt.ylabel('Total Value ($)', fontsize=14)
     plt.tight_layout()
-    plt.savefig('output/charts/segment_value.png')
+    plt.savefig('output/visualizations/segment_value.png', dpi=300)
     visualizations.append('segment_value.png')
     plt.close()
     
     # 6. Correlation Heatmap
-    plt.figure(figsize=(8, 6))
-    plt.imshow(transformed_data['correlation_matrix'], cmap='coolwarm', interpolation='none')
-    plt.colorbar()
-    plt.xticks(range(len(transformed_data['correlation_matrix'])), transformed_data['correlation_matrix'].columns, rotation=45)
-    plt.yticks(range(len(transformed_data['correlation_matrix'])), transformed_data['correlation_matrix'].columns)
-    
-    # Add correlation values
-    for i in range(len(transformed_data['correlation_matrix'])):
-        for j in range(len(transformed_data['correlation_matrix'])):
-            text = plt.text(j, i, f'{transformed_data["correlation_matrix"].iloc[i, j]:.2f}',
-                           ha="center", va="center", color="black")
-    
-    plt.title('Correlation Matrix')
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(transformed_data['correlation_matrix'], annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
+    plt.title('Correlation Matrix', fontsize=16)
     plt.tight_layout()
-    plt.savefig('output/charts/correlation_matrix.png')
+    plt.savefig('output/visualizations/correlation_matrix.png', dpi=300)
     visualizations.append('correlation_matrix.png')
     plt.close()
     
     # 7. Region Comparison
     plt.figure(figsize=(8, 5))
-    plt.bar(
-        transformed_data['region_summary']['region'],
-        transformed_data['region_summary']['total_value']
-    )
-    plt.title('Total Value by Region')
-    plt.xlabel('Region')
-    plt.ylabel('Total Value ($)')
+    sns.barplot(x='region', y='total_value', data=transformed_data['region_summary'], palette='viridis')
+    plt.title('Total Value by Region', fontsize=16)
+    plt.xlabel('Region', fontsize=14)
+    plt.ylabel('Total Value ($)', fontsize=14)
     plt.tight_layout()
-    plt.savefig('output/charts/region_value.png')
+    plt.savefig('output/visualizations/region_value.png', dpi=300)
     visualizations.append('region_value.png')
     plt.close()
     
-    # Create an HTML report with embedded charts
-    html_content = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Sales Data Analysis Report</title>
-        <style>
-            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-            h1, h2, h3 { color: #2c3e50; }
-            .container { max-width: 1200px; margin: 0 auto; }
-            .summary-box { background-color: #f8f9fa; border: 1px solid #dee2e6; 
-                         border-radius: 5px; padding: 15px; margin-bottom: 20px; }
-            .chart-container { margin: 30px 0; }
-            .chart { max-width: 100%; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-            table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-            th, td { text-align: left; padding: 12px; border-bottom: 1px solid #ddd; }
-            th { background-color: #f2f2f2; }
-            tr:hover { background-color: #f5f5f5; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>Sales Data Analysis Report</h1>
-            <p>Generated on: %s</p>
-            
-            <div class="summary-box">
-                <h2>Executive Summary</h2>
-                <p>This report provides an analysis of sales data over the past 30 days.</p>
-                <p><strong>Total Revenue:</strong> $%s</p>
-                <p><strong>Total Transactions:</strong> %s</p>
-                <p><strong>Average Transaction Value:</strong> $%s</p>
-                <p><strong>Overall ROI:</strong> %s%%</p>
-            </div>
-            
-            <h2>Daily Revenue Trend</h2>
-            <div class="chart-container">
-                <img class="chart" src="charts/daily_revenue_trend.png" alt="Daily Revenue Trend">
-                <p>The chart above shows the daily revenue trend with a 7-day moving average.</p>
-            </div>
-            
-            <h2>Day of Week Analysis</h2>
-            <div class="chart-container">
-                <img class="chart" src="charts/revenue_by_day.png" alt="Revenue by Day">
-                <p>Average revenue broken down by day of the week.</p>
-            </div>
-            
-            <h2>Product Analysis</h2>
-            <div class="chart-container">
-                <img class="chart" src="charts/product_sales_pie.png" alt="Product Sales Distribution">
-                <p>Distribution of sales across different products.</p>
-            </div>
-            
-            <h2>Category Analysis</h2>
-            <div class="chart-container">
-                <img class="chart" src="charts/category_sales.png" alt="Category Sales">
-                <p>Sales comparison between different product categories.</p>
-            </div>
-            
-            <h2>Customer Segment Analysis</h2>
-            <div class="chart-container">
-                <img class="chart" src="charts/segment_value.png" alt="Segment Value">
-                <p>Total value generated by different customer segments.</p>
-            </div>
-            
-            <h2>Regional Analysis</h2>
-            <div class="chart-container">
-                <img class="chart" src="charts/region_value.png" alt="Region Value">
-                <p>Total value generated across different regions.</p>
-            </div>
-            
-            <h2>Correlation Analysis</h2>
-            <div class="chart-container">
-                <img class="chart" src="charts/correlation_matrix.png" alt="Correlation Matrix">
-                <p>Correlation matrix showing relationships between key metrics.</p>
-            </div>
-            
-            <h2>Top 5 Products by Sales</h2>
-            <table>
-                <tr>
-                    <th>Product</th>
-                    <th>Total Sales ($)</th>
-                    <th>Units Sold</th>
-                    <th>Market Share (%%)</th>
-                </tr>
-                %s
-            </table>
-        </div>
-    </body>
-    </html>
-    """
-    
-    # Generate top 5 products table rows
-    top_products = transformed_data['product_summary'].head(5)
-    product_rows = ""
-    for _, row in top_products.iterrows():
-        product_rows += f"""
-        <tr>
-            <td>{row['product']}</td>
-            <td>${row['total_sales']:.2f}</td>
-            <td>{int(row['units_sold'])}</td>
-            <td>{row['market_share']:.2f}%</td>
-        </tr>
-        """
-    
-    # Format summary values
-    total_revenue = transformed_data['daily_sales']['revenue'].sum()
-    total_transactions = int(transformed_data['daily_sales']['transactions'].sum())
-    avg_transaction = total_revenue / total_transactions
-    overall_roi = ((total_revenue - transformed_data['daily_sales']['advertising_spend'].sum()) / 
-                   transformed_data['daily_sales']['advertising_spend'].sum() * 100)
-    
-    # Fill in the HTML template
-    html_report = html_content % (
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        f"{total_revenue:.2f}",
-        f"{total_transactions:,}",
-        f"{avg_transaction:.2f}",
-        f"{overall_roi:.2f}",
-        product_rows
-    )
-    
-    # Save the HTML report
-    with open("output/sales_analysis_report.html", "w") as f:
-        f.write(html_report)
+    # 8. Segment-Region Heatmap
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(transformed_data['segment_region_matrix'], annot=True, cmap='YlGnBu', fmt='.0f', linewidths=0.5)
+    plt.title('Customer Value by Segment and Region', fontsize=16)
+    plt.tight_layout()
+    plt.savefig('output/visualizations/segment_region_heatmap.png', dpi=300)
+    visualizations.append('segment_region_heatmap.png')
+    plt.close()
     
     # Create a summary of the operation
     summary = {
         "timestamp": datetime.now().isoformat(),
-        "data_files_created": [f"{name}.csv" for name in transformed_data.keys() if isinstance(transformed_data[name], pd.DataFrame)],
+        "data_files_created": [f"data/{name}.csv" for name in transformed_data.keys() if isinstance(transformed_data[name], pd.DataFrame)],
         "visualizations_created": visualizations,
-        "report": "sales_analysis_report.html",
         "summary_metrics": {
             "total_revenue": total_revenue,
             "total_transactions": total_transactions,
             "average_transaction_value": avg_transaction,
             "overall_roi": overall_roi,
-            "top_product": top_products.iloc[0]['product'],
-            "top_product_sales": top_products.iloc[0]['total_sales']
+            "top_product": top_product,
+            "top_product_sales": top_product_sales
         }
     }
     
     print(f"Generated {len(summary['data_files_created'])} data files")
     print(f"Created {len(summary['visualizations_created'])} visualizations")
-    print(f"Produced HTML report: {summary['report']}")
     
     return summary
 
@@ -535,7 +436,6 @@ def run_pandas_migration():
     print(f"  - Average Transaction Value: ${result['summary_metrics']['average_transaction_value']:.2f}")
     print(f"  - Overall ROI: {result['summary_metrics']['overall_roi']:.2f}%")
     print(f"  - Top Product: {result['summary_metrics']['top_product']} (${result['summary_metrics']['top_product_sales']:.2f})")
-    print(f"- HTML Report Generated: {result['report']}")
     
     return result
 

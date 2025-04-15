@@ -15,14 +15,14 @@ class SourceRecord(BaseModel):
     created_at: Optional[datetime] = None
     
     @field_validator('column1')
-    def column1_must_not_contain_special_chars(cls, v):
+    def column1_must_not_contain_special_chars(self, v):
         """Validate that column1 doesn't contain special characters"""
         if re.search(r'[!@#$%^&*()_+=\[\]{}|\\:;"\'<>,.?/~`]', v):
             raise ValueError("column1 should not contain special characters")
         return v
     
     @field_validator('column3')
-    def column3_must_be_in_range(cls, v):
+    def column3_must_be_in_range(self, v):
         """Validate that column3 is within acceptable range"""
         if v is not None and (v < 0 or v > 1000):
             raise ValueError("column3 must be between 0 and 1000")

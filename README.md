@@ -45,7 +45,7 @@ target_db_uri: "postgresql+psycopg2://user:password@localhost/target_db"
 You can set the `PROFILE` environment variable to choose different configuration files:
 
 ```bash
-export PROFILE=production  # Will use application-production.yml
+export PROFILE=prod  # Will use application-prod.yml
 ```
 
 ## Usage

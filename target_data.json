@@ -1,0 +1,57 @@
+[
+  {
+    "product_id": 1,
+    "product_name": "PRODUCT A",
+    "category": "Electronics",
+    "price_usd": 199.99,
+    "price_eur": 181.99,
+    "availability": "In Stock",
+    "processed_at": "2025-04-15T09:54:44.188692",
+    "discount": 0.1,
+    "discounted_price_usd": 179.99
+  },
+  {
+    "product_id": 2,
+    "product_name": "PRODUCT B",
+    "category": "Books",
+    "price_usd": 29.99,
+    "price_eur": 27.29,
+    "availability": "In Stock",
+    "processed_at": "2025-04-15T09:54:44.188703",
+    "discount": 0.05,
+    "discounted_price_usd": 28.49
+  },
+  {
+    "product_id": 3,
+    "product_name": "PRODUCT C",
+    "category": "Electronics",
+    "price_usd": 99.5,
+    "price_eur": 90.55,
+    "availability": "Out of Stock",
+    "processed_at": "2025-04-15T09:54:44.188707",
+    "discount": 0.1,
+    "discounted_price_usd": 89.55
+  },
+  {
+    "product_id": 4,
+    "product_name": "PRODUCT D",
+    "category": "Clothing",
+    "price_usd": 49.99,
+    "price_eur": 45.49,
+    "availability": "In Stock",
+    "processed_at": "2025-04-15T09:54:44.188710",
+    "discount": 0.0,
+    "discounted_price_usd": 49.99
+  },
+  {
+    "product_id": 5,
+    "product_name": "PRODUCT E",
+    "category": "Books",
+    "price_usd": 14.99,
+    "price_eur": 13.64,
+    "availability": "Out of Stock",
+    "processed_at": "2025-04-15T09:54:44.188712",
+    "discount": 0.05,
+    "discounted_price_usd": 14.24
+  }
+]

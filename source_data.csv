@@ -1,0 +1,6 @@
+id,name,category,price,in_stock
+1,Product A,Electronics,199.99,True
+2,Product B,Books,29.99,True
+3,Product C,Electronics,99.5,False
+4,Product D,Clothing,49.99,True
+5,Product E,Books,14.99,False

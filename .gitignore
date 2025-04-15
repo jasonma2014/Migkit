@@ -1,3 +1,5 @@
 .venv
 requirements.md
 .idea/
+output/
+target_data/
